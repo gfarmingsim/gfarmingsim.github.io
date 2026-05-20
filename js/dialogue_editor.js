@@ -181,16 +181,16 @@ const App = {
     for (const r of node.responses) {
       if (r.type === 'action') {
         if (!r.action_succeed || !this.nodes[r.action_succeed]) {
-          r.action_succeed = this._addNode(r.action_succeed || null, node.x + 290, node.y + yOff);
-          yOff += 130; count++;
+          r.action_succeed = this._addNode(r.action_succeed || null, node.x + 360, node.y + yOff);
+          yOff += 170; count++;
         }
         if (!r.action_failure || !this.nodes[r.action_failure]) {
-          r.action_failure = this._addNode(r.action_failure || null, node.x + 290, node.y + yOff);
-          yOff += 130; count++;
+          r.action_failure = this._addNode(r.action_failure || null, node.x + 360, node.y + yOff);
+          yOff += 170; count++;
         }
       } else if (!r.next || !this.nodes[r.next]) {
-        r.next = this._addNode(r.next || null, node.x + 290, node.y + yOff);
-        yOff += 130; count++;
+        r.next = this._addNode(r.next || null, node.x + 360, node.y + yOff);
+        yOff += 170; count++;
       }
     }
     this._render();
@@ -315,6 +315,25 @@ const App = {
             this.notify(`"${nodeId}" is now the start node`, 'ok');
           }},
         ];
+
+        const disconnects = [];
+        for (const r of node.responses) {
+          if (r.type === 'action') {
+            if (r.action_succeed && this.nodes[r.action_succeed]) {
+              disconnects.push({ label: `✕ Disconnect "${r.label}" success → ${r.action_succeed}`, action: () => { r.action_succeed = ''; this._render(); } });
+            }
+            if (r.action_failure && this.nodes[r.action_failure]) {
+              disconnects.push({ label: `✕ Disconnect "${r.label}" failure → ${r.action_failure}`, action: () => { r.action_failure = ''; this._render(); } });
+            }
+          } else if (r.next && this.nodes[r.next]) {
+            disconnects.push({ label: `✕ Disconnect "${r.label}" → ${r.next}`, action: () => { r.next = ''; this._render(); } });
+          }
+        }
+        if (disconnects.length) {
+          items.push(null);
+          disconnects.forEach(d => items.push({ ...d, danger: true }));
+        }
+
         if (unconnected > 0) {
           items.push(null);
           items.push({ label: `+ Fill ${unconnected} unconnected port${unconnected !== 1 ? 's' : ''} with new nodes`, action: () => this._createNodesForResponses(nodeId) });
