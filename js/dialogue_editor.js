@@ -23,11 +23,24 @@ const DEFAULT_CALLBACK_STUB = `-- ┌──────────────�
 
 `;
 
+const DEFAULT_BASE_STUB = `-- ┌─────────────────────────────────────────────────────────────┐
+-- │  Base Code  ·  GMod Lua  ·  Client-side                     │
+-- ├─────────────────────────────────────────────────────────────┘
+-- │  Runs after the dialogue tables are defined.
+-- │
+-- ├── Use this for anything that needs to be registered
+-- │   alongside the dialogue — net receivers, hooks, etc.
+-- │
+-- └── Has access to the local DIALOGUE table above.
+
+`;
+
 const App = {
   speaker:         { name:'', subtitle:'', accent:'#e91e8c' },
   startNode:       'base',
   nodes:           {},
   actionCallbacks: {},
+  baseCode:        null,
 
   pan:     { x:160, y:80 },
   editId:  null,
@@ -209,6 +222,14 @@ const App = {
     const cc = document.getElementById('canvas-content');
     cc.innerHTML = '';
 
+    const connType = {};
+    for (const node of Object.values(this.nodes))
+      for (const r of node.responses) {
+        if (r.next && this.nodes[r.next]) connType[r.next] = 'next';
+        if (r.action_succeed && this.nodes[r.action_succeed]) connType[r.action_succeed] = 'suc';
+        if (r.action_failure && this.nodes[r.action_failure]) connType[r.action_failure] = 'fail';
+      }
+
     for (const node of Object.values(this.nodes)) {
       const el = document.createElement('div');
       el.className = 'node' + (node.id === this.editId ? ' sel' : '');
@@ -242,7 +263,7 @@ const App = {
 
       el.innerHTML = `
         <div class="n-header" data-nid="${esc(node.id)}">
-          <div class="n-inport" data-in="${esc(node.id)}"></div>
+          <div class="n-inport${connType[node.id] ? ` conn-${connType[node.id]}` : ''}" data-in="${esc(node.id)}"></div>
           <span class="n-id">${esc(node.id)}</span>
           ${node.id === this.startNode ? '<span class="n-start">START</span>' : ''}
           <button class="n-pencil" data-edit="${esc(node.id)}" title="Edit">✏</button>
@@ -393,11 +414,7 @@ const App = {
 
   _renderConnections() {
     const svg = document.getElementById('svg-layer');
-    let out = `<defs>
-      ${this._mkr('aP', 'var(--accent)')}
-      ${this._mkr('aG', 'var(--grn)')}
-      ${this._mkr('aR', 'var(--red)')}
-    </defs>`;
+    let out = '';
 
     for (const node of Object.values(this.nodes)) {
       for (const r of node.responses) {
@@ -406,17 +423,17 @@ const App = {
           if (r.action_succeed && this.nodes[r.action_succeed]) {
             const p1 = this._portPos(`.outport.suc[data-nid="${nid}"][data-rid="${rid}"]`);
             const p2 = this._portPos(`.n-inport[data-in="${r.action_succeed}"]`);
-            if (p1 && p2) out += this._bez(p1, p2, 'var(--grn)', 'aG', null, { nid, rid, port: 'suc' });
+            if (p1 && p2) out += this._bez(p1, p2, 'var(--grn)', null, { nid, rid, port: 'suc' });
           }
           if (r.action_failure && this.nodes[r.action_failure]) {
             const p1 = this._portPos(`.outport.fail[data-nid="${nid}"][data-rid="${rid}"]`);
             const p2 = this._portPos(`.n-inport[data-in="${r.action_failure}"]`);
-            if (p1 && p2) out += this._bez(p1, p2, 'var(--red)', 'aR', null, { nid, rid, port: 'fail' });
+            if (p1 && p2) out += this._bez(p1, p2, 'var(--red)', null, { nid, rid, port: 'fail' });
           }
         } else if (r.next && this.nodes[r.next]) {
           const p1 = this._portPos(`.outport[data-nid="${nid}"][data-rid="${rid}"][data-port="next"]`);
           const p2 = this._portPos(`.n-inport[data-in="${r.next}"]`);
-          if (p1 && p2) out += this._bez(p1, p2, 'var(--accent)', 'aP', null, { nid, rid, port: 'next' });
+          if (p1 && p2) out += this._bez(p1, p2, 'var(--accent)', null, { nid, rid, port: 'next' });
         }
       }
     }
@@ -431,26 +448,19 @@ const App = {
       const p1 = this._portPos(sel);
       if (p1) {
         const col = w.port === 'suc' ? 'var(--grn)' : w.port === 'fail' ? 'var(--red)' : 'var(--accent)';
-        out += this._bez(p1, { x: w.mx, y: w.my }, col, null, '7,4', null);
+        out += this._bez(p1, { x: w.mx, y: w.my }, col, '7,4', null);
       }
     }
 
     svg.innerHTML = out;
   },
 
-  _mkr(id, color) {
-    return `<marker id="${id}" viewBox="0 0 7 7" refX="6" refY="3.5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M0,0 L7,3.5 L0,7 Z" fill="${color}"/>
-    </marker>`;
-  },
-
-  _bez(p1, p2, col, marker, dash, conn) {
+  _bez(p1, p2, col, dash, conn) {
     const dx = Math.max(Math.abs(p2.x - p1.x) * 0.5, 60);
     const d = `M${p1.x.toFixed(1)},${p1.y.toFixed(1)} C${(p1.x + dx).toFixed(1)},${p1.y.toFixed(1)} ${(p2.x - dx).toFixed(1)},${p2.y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
     let out = `<path d="${d}" stroke="${col}" stroke-width="2" fill="none" opacity=".85"
       pointer-events="none"
-      ${marker ? `marker-end="url(#${marker})"` : ''}
-      ${dash   ? `stroke-dasharray="${dash}"`   : ''}/>`;
+      ${dash ? `stroke-dasharray="${dash}"` : ''}/>`;
     if (conn) {
       out += `<path d="${d}" stroke="transparent" stroke-width="14" fill="none"
         style="pointer-events:stroke;cursor:pointer"
@@ -744,10 +754,23 @@ const App = {
     else alert('Monaco is still loading, try again in a moment.');
   },
 
+  openBaseCode() {
+    document.getElementById('mc-label').textContent = 'Base Code';
+    document.getElementById('mc-modal').classList.remove('hidden');
+    this.monacoTarget = { key: '__baseCode__' };
+    if (this.monacoEdit) { this.monacoEdit.setValue(this.baseCode ?? DEFAULT_BASE_STUB); this.monacoEdit.focus(); }
+    else alert('Monaco is still loading, try again in a moment.');
+  },
+
   saveMonaco() {
     if (!this.monacoEdit || !this.monacoTarget) return;
-    this.actionCallbacks[this.monacoTarget.key] = this.monacoEdit.getValue();
-    this.notify(`Callback "${this.monacoTarget.key}" saved`, 'ok');
+    if (this.monacoTarget.key === '__baseCode__') {
+      this.baseCode = this.monacoEdit.getValue();
+      this.notify('Base code saved', 'ok');
+    } else {
+      this.actionCallbacks[this.monacoTarget.key] = this.monacoEdit.getValue();
+      this.notify(`Callback "${this.monacoTarget.key}" saved`, 'ok');
+    }
     this.closeMonaco();
   },
   closeMonaco() { document.getElementById('mc-modal').classList.add('hidden'); this.monacoTarget = null; },
@@ -818,12 +841,24 @@ const App = {
       L.push('');
       L.push('DIALOGUE.actionCallbacks = {');
       for (const key of keys) {
-        const code = (this.actionCallbacks[key] || '').trim();
+        const code = (this.actionCallbacks[key] || '').split('\n')
+          .filter(l => !/^-- [┌│├└]/.test(l))
+          .join('\n').trim();
         L.push(`    [${luaQ(key)}] = function()`);
         if (code) for (const line of code.split('\n')) L.push('        ' + line);
         L.push('    end,');
       }
       L.push('}');
+    }
+
+    const baseCode = (this.baseCode || '').split('\n')
+      .filter(l => !/^-- [┌│├└]/.test(l))
+      .join('\n').trim();
+    if (baseCode) {
+      L.push('');
+      for (const line of DEFAULT_BASE_STUB.trimEnd().split('\n')) L.push(line);
+      L.push('');
+      for (const line of baseCode.split('\n')) L.push(line);
     }
 
     L.push('');
@@ -833,7 +868,7 @@ const App = {
 
   // ── JSON ──────────────────────────────────────────────────────────────────
   exportJSON() {
-    const state = { speaker: this.speaker, startNode: this.startNode, nodes: this.nodes, actionCallbacks: this.actionCallbacks };
+    const state = { speaker: this.speaker, startNode: this.startNode, nodes: this.nodes, actionCallbacks: this.actionCallbacks, baseCode: this.baseCode };
     const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -877,6 +912,7 @@ const App = {
     this.startNode       = s.startNode        || 'base';
     this.nodes           = s.nodes            || {};
     this.actionCallbacks = s.actionCallbacks  || {};
+    this.baseCode        = s.baseCode          ?? null;
     this.editId = null;
     document.getElementById('sp-name').value     = this.speaker.name;
     document.getElementById('sp-subtitle').value = this.speaker.subtitle;

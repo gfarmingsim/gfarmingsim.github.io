@@ -34,9 +34,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;background:var(-
 .node{position:absolute;width:300px;background:var(--surf2);border:1.5px solid var(--bdr);border-radius:10px;box-shadow:0 5px 18px rgba(0,0,0,.45);overflow:visible}
 .node.sel{border-color:var(--accent)}
 body.wiring .node:hover{border-color:var(--wire-col)!important;cursor:crosshair}
-.n-header{display:flex;align-items:center;gap:8px;padding:9px 13px;background:var(--surf3);border-radius:9px 9px 0 0;border-bottom:1px solid var(--bdr);cursor:grab}
+.n-header{display:flex;align-items:center;gap:8px;padding:9px 13px 9px 20px;background:var(--surf3);border-radius:9px 9px 0 0;border-bottom:1px solid var(--bdr);cursor:grab;position:relative}
 body.wiring .n-header{cursor:crosshair}
-.n-inport{width:13px;height:13px;border-radius:50%;background:var(--bg);border:2px solid var(--blue);flex-shrink:0;cursor:crosshair}
+.n-inport{position:absolute;left:-8px;top:50%;transform:translateY(-50%);width:13px;height:13px;border-radius:50%;background:var(--bg);border:2px solid var(--blue);cursor:crosshair}
+.n-inport.conn-next{border-color:var(--accent)}
+.n-inport.conn-suc{border-color:var(--grn)}
+.n-inport.conn-fail{border-color:var(--red)}
 .n-id{flex:1;font-family:monospace;font-size:15px;color:var(--blue);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .n-start{font-size:12px;background:var(--grn);color:#1e1e2e;border-radius:3px;padding:2px 7px;font-weight:700;flex-shrink:0}
 .n-pencil{background:none;border:none;color:var(--sub);cursor:pointer;padding:4px 7px;border-radius:3px;font-size:15px;line-height:1;flex-shrink:0}
