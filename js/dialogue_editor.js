@@ -858,8 +858,6 @@ const App = {
       .join('\n').trim();
     if (baseCode) {
       L.push('');
-      for (const line of DEFAULT_BASE_STUB.trimEnd().split('\n')) L.push(line);
-      L.push('');
       for (const line of baseCode.split('\n')) L.push(line);
     }
 
