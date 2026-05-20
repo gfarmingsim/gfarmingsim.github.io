@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dialogue Editor — app.gmodfarming.com</title>
+<link rel="stylesheet" type="text/css" href="/css/dialogue_editor.css">
+
+</head>
+<body>
+
+<aside id="sidebar">
+  <div id="logo">app.gmodfarming.com / dialogue_editor</div>
+
+  <div>
+    <div class="ss-title">NPC Speaker</div>
+    <div class="field"><label>Name</label><input type="text" id="sp-name" placeholder="Shopkeeper May" oninput="App.syncSpeaker()"></div>
+    <div class="field"><label>Subtitle</label><input type="text" id="sp-subtitle" placeholder="General Store" oninput="App.syncSpeaker()"></div>
+    <div class="field">
+      <label>Accent Color</label>
+      <input type="color" id="sp-accent" value="#e91e8c" oninput="App.syncSpeaker()">
+      <div id="accent-prev" style="height:5px;border-radius:3px;background:#e91e8c;margin-top:4px;transition:background .1s"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="ss-title">Graph</div>
+    <div class="field"><label>Start Node</label><select id="sp-start" onchange="App.syncStart()"></select></div>
+  </div>
+
+  <div class="sidebar-actions">
+    <button class="btn" onclick="App.createNode()">+ Add Dialogue Node</button>
+    <button class="btn primary" onclick="App.showLuaExport()">⬇ Export Lua</button>
+    <button class="btn" onclick="App.exportJSON()">⬇ Save JSON</button>
+    <button class="btn" onclick="App.showImport()">⬆ Load JSON</button>
+    <button class="btn danger" onclick="App.clearAll()">✕ Clear All</button>
+  </div>
+</aside>
+
+<div id="canvas-wrap">
+  <svg id="svg-layer" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div id="canvas-content"></div>
+</div>
+
+<div id="ed-panel">
+  <div id="ed-head">
+    <span id="ed-head-id">node</span>
+    <button id="ed-close" onclick="App.closeEditor()" title="Close (Esc)">✕</button>
+  </div>
+  <div id="ed-body"></div>
+</div>
+
+<!-- Action callback Monaco editor -->
+<div id="mc-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span id="mc-label">Callback</span>
+      <button class="ibtn del" onclick="App.closeMonaco()">✕</button>
+    </div>
+    <div id="mc-container"></div>
+    <div class="modal-foot">
+      <button class="btn" onclick="App.closeMonaco()">Cancel</button>
+      <button class="btn primary" onclick="App.saveMonaco()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lua export -->
+<div id="ex-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span>Export Lua</span>
+      <button class="ibtn del" onclick="App.closeLuaExport()">✕</button>
+    </div>
+    <div id="ex-container"></div>
+    <pre id="ex-fallback" class="hidden"></pre>
+    <div class="modal-foot">
+      <button class="btn" id="copy-lua-btn" onclick="App.copyLua()">📋 Copy</button>
+      <button class="btn" onclick="App.closeLuaExport()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- JSON import -->
+<div id="import-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span>Load JSON</span>
+      <button class="ibtn del" onclick="App.closeImport()">✕</button>
+    </div>
+    <div id="import-body">
+      <div id="import-hint">Paste saved JSON, load from a file, or paste from clipboard.</div>
+      <textarea id="import-txt" placeholder='{ "speaker": {...}, "nodes": {...} }'></textarea>
+    </div>
+    <div class="modal-foot" id="import-foot">
+      <div style="display:flex;gap:6px">
+        <button class="btn" onclick="App.pasteClipboard()">📋 Paste Clipboard</button>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="App._handleFile(this)">
+        <button class="btn" onclick="document.getElementById('import-file').click()">📂 Load File</button>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn" onclick="App.closeImport()">Cancel</button>
+        <button class="btn primary" onclick="App.importFromText()">Import</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Context menu -->
+<div id="ctx-menu" class="hidden"></div>
+
+<!-- Notifications -->
+<div id="notif-wrap"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+<script src="/js/dialogue_editor.js"></script>
+</body>
+</html>
