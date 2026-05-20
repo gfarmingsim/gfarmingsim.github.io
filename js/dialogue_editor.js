@@ -24,7 +24,7 @@ const DEFAULT_CALLBACK_STUB = `-- ┌──────────────�
 `;
 
 const DEFAULT_BASE_STUB = `-- ┌─────────────────────────────────────────────────────────────┐
--- │  Base Code  ·  GMod Lua  ·  Client-side                     │
+-- │           Base Code  ·  GMod Lua  ·  Shared Realm           │
 -- ├─────────────────────────────────────────────────────────────┘
 -- │  Runs after the dialogue tables are defined.
 -- │
@@ -804,17 +804,17 @@ const App = {
     const L = [];
     L.push('-- Generated using the Dialogue Node Editor: https://gfarmingsim.github.io/dialogue_editor.html');
     L.push('');
-    L.push('local DIALOGUE = {}');
+    L.push(`if not DIALOGUE then return LOADER_RELOAD(${luaQ("dialogue_scripts")}) end`);
     L.push('');
-    L.push('DIALOGUE.speaker = {');
+    L.push('DIALOGUE.Speaker = {');
     L.push(`    name     = ${luaQ(sp.name || 'NPC')},`);
     L.push(`    subtitle = ${luaQ(sp.subtitle || '')},`);
     L.push(`    accent   = ${luaQ(sp.accent || '#ffffff')},`);
     L.push('}');
     L.push('');
-    L.push(`DIALOGUE.start_node = ${luaQ(this.startNode || 'base')}`);
+    L.push(`DIALOGUE.StartNode = ${luaQ(this.startNode || 'base')}`);
     L.push('');
-    L.push('DIALOGUE.nodes = {');
+    L.push('DIALOGUE.Nodes = {');
     for (const node of Object.values(this.nodes)) {
       L.push(`    [${luaQ(node.id)}] = {`);
       L.push(`        messages = {${node.messages.map(luaQ).join(', ')}},`);
@@ -841,7 +841,7 @@ const App = {
     )];
     if (keys.length) {
       L.push('');
-      L.push('DIALOGUE.actionCallbacks = {');
+      L.push('DIALOGUE.ActionCallbacks = {');
       for (const key of keys) {
         const code = (this.actionCallbacks[key] || '').split('\n')
           .filter(l => !/^-- [┌│├└]/.test(l))
@@ -861,8 +861,6 @@ const App = {
       for (const line of baseCode.split('\n')) L.push(line);
     }
 
-    L.push('');
-    L.push('DialogueEngine:RegisterDialogue(DIALOGUE)');
     return L.join('\n');
   },
 
