@@ -802,6 +802,8 @@ const App = {
   _genLua() {
     const sp = this.speaker;
     const L = [];
+    L.push('-- Generated using the Dialogue Node Editor: https://gfarmingsim.github.io/dialogue_editor.html');
+    L.push('');
     L.push('local DIALOGUE = {}');
     L.push('');
     L.push('DIALOGUE.speaker = {');
